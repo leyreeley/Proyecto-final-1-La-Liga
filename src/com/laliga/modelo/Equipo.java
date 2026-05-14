@@ -12,17 +12,17 @@ public class Equipo {
     
     private int id_equipo;
     private String nombre;
-    private int anio_fundacion;
+    private String anio_fundacion;
     private int id_estadio;
     
     public Equipo() {
     }
 
-    public Equipo(int idEquipo, String nombre, int anioFundacion, int idEstadio) {
-        this.id_equipo = idEquipo;
+    public Equipo(int id_equipo, String nombre, String anio_fundacion, int id_estadio) {
+        this.id_equipo = id_equipo;
         this.nombre = nombre;
-        this.anio_fundacion = anioFundacion;
-        this.id_estadio = idEstadio;
+        this.anio_fundacion = anio_fundacion;
+        this.id_estadio = id_estadio;
     }
 
     public int getIdEquipo() {
@@ -41,12 +41,12 @@ public class Equipo {
         this.nombre = nombre;
     }
 
-    public int getAnioFundacion() {
+    public String getAnio_fundacion() {
         return anio_fundacion;
     }
 
-    public void setAnioFundacion(int anioFundacion) {
-        this.anio_fundacion = anioFundacion;
+    public void setAnio_fundacion(String anio_fundacion) {
+        this.anio_fundacion = anio_fundacion;
     }
 
     public int getIdEstadio() {

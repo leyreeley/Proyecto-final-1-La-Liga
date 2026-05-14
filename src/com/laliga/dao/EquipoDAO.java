@@ -15,19 +15,18 @@ import java.sql.*;
  * @author leire.domsan
  */
 public class EquipoDAO {
+
     public List<Equipo> obtenerTodos() {
         List<Equipo> lista = new ArrayList<>();
         String sql = "SELECT * FROM equipos"; // Esta será la consulta SQL
 
-        try (Connection con = ConexionBD.conectar();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection con = ConexionBD.conectar(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 Equipo e = new Equipo();
                 e.setIdEquipo(rs.getInt("id_equipo"));
                 e.setNombre(rs.getString("nombre"));
-                e.setAnioFundacion(rs.getInt("anio_fundacion"));
+                e.setAnio_fundacion(rs.getString("anio_fundacion"));
                 e.setIdEstadio(rs.getInt("id_estadio"));
                 lista.add(e);
             }
@@ -39,18 +38,23 @@ public class EquipoDAO {
 
     // MÉTODO PARA INSERTAR (Opción 2 del menú consola / FormularioEquipo)
     public boolean insertar(Equipo e) {
-        String sql = "INSERT INTO equipos (nombre, anio_fundacion, id_estadio) VALUES (?, ?, ?)";
-        
-        try (Connection con = ConexionBD.conectar();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            
+        // IMPORTANTE: El script usa "Equipos" (con E mayúscula y en plural)
+        String sql = "INSERT INTO Equipos (nombre, anio_fundacion, id_estadio) VALUES (?, ?, ?)";
+
+        try (Connection con = ConexionBD.conectar(); PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setString(1, e.getNombre());
-            ps.setInt(2, e.getAnioFundacion());
+
+            // CAMBIO CLAVE: El script dice VARCHAR(4), así que usamos setString
+            // Si en tu clase Equipo el año es String, usa e.getAnioFundacion()
+            // Si sigue siendo int, usa String.valueOf(e.getAnioFundacion())
+            ps.setString(2, e.getAnio_fundacion());
+
             ps.setInt(3, e.getIdEstadio());
-            
+
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            System.out.println("Error al insertar equipo: " + ex.getMessage());
             return false;
         }
     }

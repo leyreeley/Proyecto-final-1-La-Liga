@@ -172,16 +172,13 @@ public class VentanaPrincipal extends javax.swing.JFrame {
     private void cargarDatosFalsos() {
         // Simulamos que el DAO nos devuelve una lista de la base de datos
         List<Equipo> listaFalsa = new ArrayList<>();
-        listaFalsa.add(new Equipo(1, "Real Valladolid", 1928, 1));
-        listaFalsa.add(new Equipo(2, "Real Madrid", 1902, 2));
-        listaFalsa.add(new Equipo(3, "FC Barcelona", 1899, 3));
 
         // Recorremos la lista y añadimos cada equipo como una fila en la tabla
         for (Equipo e : listaFalsa) {
             Object[] fila = {
                 e.getIdEquipo(),
                 e.getNombre(),
-                e.getAnioFundacion(),
+                e.getAnio_fundacion(),
                 e.getIdEstadio()
             };
             modeloTabla.addRow(fila);

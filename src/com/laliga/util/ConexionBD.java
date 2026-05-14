@@ -15,9 +15,9 @@ import java.sql.SQLException;
  */
 public class ConexionBD {
     
-    private static final String URL = "jdbc:mysql://localhost:3306/laliga";
+    private static final String URL = "jdbc:mysql://localhost:3306/futbol";
     private static final String USER = "root";
-    private static final String PASS = "";
+    private static final String PASS = "1234";
 
     public static Connection conectar() {
         Connection conexion = null;

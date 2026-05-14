@@ -4,8 +4,10 @@
  */
 package com.laliga.consola;
 
+import com.laliga.dao.EquipoDAO;
 import com.laliga.dao.EstadisticaDAO;
 import com.laliga.dao.JugadorDAO;
+import com.laliga.modelo.Equipo;
 import com.laliga.modelo.Estadistica;
 import com.laliga.modelo.Jugador;
 import java.util.Scanner;
@@ -18,8 +20,10 @@ public class MenuPrincipal {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        int opcion = -1;
+        EquipoDAO equipoDAO = new EquipoDAO();
+        JugadorDAO jugadorDAO = new JugadorDAO();
         EstadisticaDAO estadisticaDAO = new EstadisticaDAO();
+        int opcion = -1;
 
         System.out.println("=========================================");
         System.out.println("    BIENVENIDO AL GESTOR DE LA LIGA ");
@@ -43,9 +47,7 @@ public class MenuPrincipal {
                 switch (opcion) {
                     case 1:
                         System.out.println("\n--LISTADO DE EQUIPOS--");
-                        // TODO: Llamar a equipoDAO.obtenerTodos()
-                        System.out.println("- Real Valladolid (Mock)");
-                        System.out.println("- Real Madrid (Mock)");
+                        equipoDAO.obtenerTodos();
                         break;
 
                     case 2:
@@ -53,19 +55,17 @@ public class MenuPrincipal {
                         System.out.print("Escribe el nombre del equipo: ");
                         String nombre = scanner.nextLine();
                         System.out.print("Escribe el anio de fundacion: ");
-                        int anio = Integer.parseInt(scanner.nextLine());
+                        String anio = scanner.nextLine();
                         System.out.print("Escribe el ID del estadio: ");
                         int idEstadio = Integer.parseInt(scanner.nextLine());
 
-                        // TODO: Llamar a equipoDAO.anadirEquipo(new Equipo(...))
+                        equipoDAO.anadirEquipo(new Equipo(idEstadio, nombre, anio, idEstadio));
                         System.out.println("Equipo '" + nombre + "' guardado correctamente.");
                         break;
 
                     case 3:
                         System.out.println("\n--LISTADO DE JUGADORES--");
-                        // TODO: Llamar a jugadorDAO.obtenerTodos()
-                        System.out.println("- Jordi Masip (Mock)");
-                        System.out.println("- Vinícius Júnior (Mock)");
+                        jugadorDAO.obtenerTodos();
                         break;
 
                     case 4:
