@@ -14,7 +14,7 @@ import java.sql.*;
 public class EstadisticaDAO {
     
     public boolean insertar(Estadistica est) {
-        String sql = "INSERT INTO estadisticas (id_jugador, goles, asistencias, "
+        String sql = "INSERT INTO Estadisticas (id_jugador, goles, asistencias, "
                    + "tarjetas_amarillas, tarjetas_rojas, partidos_titular, "
                    + "partidos_suplente, partidos_sin_jugar) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         
@@ -38,7 +38,7 @@ public class EstadisticaDAO {
     }
     
     public Estadistica obtenerPorJugador(int idJugador) {
-        String sql = "SELECT * FROM estadisticas WHERE id_jugador = ?";
+        String sql = "SELECT * FROM Estadisticas WHERE id_jugador = ?";
         try (Connection con = ConexionBD.conectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
             
@@ -59,15 +59,15 @@ public class EstadisticaDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Error al obtener estadísticas: " + e.getMessage());
         }
         return null; // Si no tiene estadísticas registradas
     }
 
     // Usamos un JOIN para traer también el nombre del jugador
     public void mostrarTopGoleadores() {
-        String sql = "SELECT j.nombre, e.goles FROM jugadores j " +
-                     "JOIN estadisticas e ON j.id_jugador = e.id_jugador " +
+        String sql = "SELECT j.nombre, e.goles FROM Jugadores j " +
+                     "JOIN Estadisticas e ON j.id_jugador = e.id_jugador " +
                      "ORDER BY e.goles DESC LIMIT 5";
 
         try (Connection con = ConexionBD.conectar();

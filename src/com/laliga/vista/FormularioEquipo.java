@@ -4,9 +4,12 @@
  */
 package com.laliga.vista;
 
+import com.laliga.dao.EquipoDAO;
+import com.laliga.modelo.Equipo;
 import javax.swing.*;
 import java.awt.*;
 import javax.swing.table.DefaultTableModel;
+
 /**
  *
  * @author leire.domsan
@@ -17,16 +20,17 @@ public class FormularioEquipo extends javax.swing.JDialog {
     private JTextField txtAnio;
     private JTextField txtIdEstadio;
     private JButton btnGuardar;
+
     /**
      * Creates new form FormularioEquipo
      */
-    public FormularioEquipo(JFrame parent, DefaultTableModel modeloTabla) {
-        super(parent, "Añadir Nuevo Equipo", true); // El 'true' hace que sea modal (bloquea la ventana de atrás)
+    public FormularioEquipo(JFrame parent) {
+        super(parent, "Añadir Nuevo Equipo", true); // Modal
         setSize(300, 200);
         setLocationRelativeTo(parent);
-        
+
         // Usamos GridLayout: 4 filas, 2 columnas, y márgenes de 10 píxeles
-        setLayout(new GridLayout(4, 2, 10, 10)); 
+        setLayout(new GridLayout(4, 2, 10, 10));
 
         // Fila 1: Nombre
         add(new JLabel("  Nombre del Equipo:"));
@@ -44,58 +48,80 @@ public class FormularioEquipo extends javax.swing.JDialog {
         add(txtIdEstadio);
 
         // Fila 4: Botón Guardar
-        add(new JLabel("")); // Dejamos la primera columna vacía para que el botón quede a la derecha
+        add(new JLabel("")); // Columna vacía
         btnGuardar = new JButton("Guardar Equipo");
         add(btnGuardar);
 
         // Dar vida al botón Guardar
         btnGuardar.addActionListener(e -> {
-            guardarDatos(modeloTabla);
+            guardarDatosEnBD();
         });
     }
 
-    private void guardarDatos(DefaultTableModel modeloTabla) {
+    private void guardarDatosEnBD() {
         // 1. Leer lo que el usuario ha escrito
         String nombre = txtNombre.getText();
         String anioStr = txtAnio.getText();
         String idEstadioStr = txtIdEstadio.getText();
 
-        // 2. Validar que no haya dejado campos vacíos
+        // 2. Validar campos vacíos
         if (nombre.isEmpty() || anioStr.isEmpty() || idEstadioStr.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Por favor, rellena todos los campos.", "Error", JOptionPane.ERROR_MESSAGE);
-            return; // Salimos del método para que no intente guardar
+            return;
         }
 
         try {
-            // 3. Convertir los textos a números
-            int anio = Integer.parseInt(anioStr);
+            // 3. Convertir ID de Estadio a número
             int idEstadio = Integer.parseInt(idEstadioStr);
-            
-            // Simulamos un ID autoincremental para la tabla visual sumando 1 al total de filas
-            int idSimulado = modeloTabla.getRowCount() + 1; 
 
-            // 4. Añadir la nueva fila a la tabla visual
-            Object[] nuevaFila = {idSimulado, nombre, anio, idEstadio};
-            modeloTabla.addRow(nuevaFila);
+            // 4. Crear el objeto Equipo con los datos introducidos
+            Equipo nuevoEquipo = new Equipo();
+            nuevoEquipo.setNombre(nombre);
+            nuevoEquipo.setAnio_fundacion(anioStr); 
+            nuevoEquipo.setIdEstadio(idEstadio);
 
-            // TODO: Aquí en el futuro añadiremos el código para guardarlo en la Base de Datos REAL
-            // EquipoDAO dao = new EquipoDAO();
-            // dao.anadirEquipo(new Equipo(0, nombre, anio, idEstadio));
+            // 5. Guardar en la base de datos usando tu EquipoDAO
+            EquipoDAO dao = new EquipoDAO();
+            boolean exito = dao.insertar(nuevoEquipo);
 
-            // 5. Cerrar esta ventanita
-            dispose();
-            
+            if (exito) {
+                JOptionPane.showMessageDialog(this, "¡Equipo añadido correctamente!");
+                dispose(); // Cerrar el formulario
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al guardar el equipo en la Base de Datos.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+
         } catch (NumberFormatException ex) {
-            // Si el usuario escribe "Hola" en el campo del año, saltará este error
-            JOptionPane.showMessageDialog(this, "El año y el ID del estadio deben ser números válidos.", "Error de formato", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "El ID del estadio debe ser un número válido.", "Error de formato", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">                          
+    private void initComponents() {
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 400, Short.MAX_VALUE)
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 300, Short.MAX_VALUE)
+        );
+
+        pack();
+    }// </editor-fold>                        
+} // <-- LA LLAVE DE CIERRE AHORA ESTÁ AL FINAL DE TODO
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
-     */
-    @SuppressWarnings("unchecked")
+     
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
@@ -118,8 +144,7 @@ public class FormularioEquipo extends javax.swing.JDialog {
     /**
      * @param args the command line arguments
      */
-   
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
-}
+

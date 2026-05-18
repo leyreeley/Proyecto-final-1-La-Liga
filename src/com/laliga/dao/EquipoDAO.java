@@ -18,7 +18,7 @@ public class EquipoDAO {
 
     public List<Equipo> obtenerTodos() {
         List<Equipo> lista = new ArrayList<>();
-        String sql = "SELECT * FROM equipos"; // Esta será la consulta SQL
+        String sql = "SELECT * FROM Equipos"; // Esta será la consulta SQL
 
         try (Connection con = ConexionBD.conectar(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
@@ -55,6 +55,17 @@ public class EquipoDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
             System.out.println("Error al insertar equipo: " + ex.getMessage());
+            return false;
+        }
+    }
+
+    public boolean eliminar(int idEquipo) {
+        String sql = "DELETE FROM Equipos WHERE id_equipo = ?";
+        try (Connection con = ConexionBD.conectar(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idEquipo);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            System.out.println("Error al eliminar equipo (puede que tenga jugadores asociados): " + ex.getMessage());
             return false;
         }
     }

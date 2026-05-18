@@ -4,7 +4,12 @@
  */
 package com.laliga.vista;
 
+import com.laliga.dao.EquipoDAO;
+import com.laliga.dao.EstadisticaDAO;
+import com.laliga.dao.JugadorDAO;
 import com.laliga.modelo.Equipo;
+import com.laliga.modelo.Estadistica;
+import com.laliga.modelo.Jugador;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -49,8 +54,7 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         JScrollPane scrollPane = new JScrollPane(tablaEquipos);
         jPanel1.add(scrollPane, java.awt.BorderLayout.CENTER);
 
-        // 4. Cargar datos falsos (Mocking)
-        cargarDatosFalsos();
+        cargarDatosRealesEquipos();
 
         // 5. Crear un panel para agrupar los botones
         JPanel panelBotones = new JPanel();
@@ -67,10 +71,9 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         // 6. Darle vida a los botones (ActionListeners)
         // Evento para el botón Añadir
         btnAnadir.addActionListener(e -> {
-            // Creamos el formulario pasándole esta ventana y el modelo de la tabla
-            FormularioEquipo formulario = new FormularioEquipo(this, modeloTabla);
-            // Lo hacemos visible
-            formulario.setVisible(true);
+            FormularioEquipo form = new FormularioEquipo(this);
+            form.setVisible(true);
+            cargarDatosRealesEquipos(); // Refrescar equipos automáticamente
         });
 
         // Evento para el botón Borrar
@@ -110,17 +113,14 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         panelBotonesJug.add(btnBorrarJugador);
         jPanel2.add(panelBotonesJug, java.awt.BorderLayout.SOUTH);
 
-        // 4. Cargar datos de prueba
-        cargarDatosFalsosJugadores();
+        cargarDatosRealesJugadores();
 
         // 5. EVENTO ACTUALIZADO: Abrir el formulario real
         btnAnadirJugador.addActionListener(e -> {
             // Abrimos el formulario que acabamos de crear
             FormularioJugador form = new FormularioJugador(this);
             form.setVisible(true);
-
-            // Cuando se cierre el formulario, podrías llamar a un método para refrescar la tabla
-            // actualizarTablaJugadores(); 
+            cargarDatosRealesEquipos();
         });
 
         // Evento para borrar
@@ -157,7 +157,7 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         jPanel3.add(panelBotonesEst, java.awt.BorderLayout.SOUTH);
 
         // 4. Cargar datos de prueba
-        cargarDatosFalsosEstadisticas();
+        cargarDatosRealesEstadisticas();
 
         // 5. Eventos (preparados para la lógica posterior)
         btnActualizar.addActionListener(e -> {
@@ -169,39 +169,62 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         });
     }
 
-    private void cargarDatosFalsos() {
-        // Simulamos que el DAO nos devuelve una lista de la base de datos
-        List<Equipo> listaFalsa = new ArrayList<>();
+    private void cargarDatosRealesEquipos() {
+        modeloTabla.setRowCount(0); // Limpiar tabla gráfica
+        EquipoDAO dao = new EquipoDAO();
+        List<Equipo> lista = dao.obtenerTodos();
 
-        // Recorremos la lista y añadimos cada equipo como una fila en la tabla
-        for (Equipo e : listaFalsa) {
-            Object[] fila = {
+        for (Equipo e : lista) {
+            // Rellenamos las filas con los campos reales
+            modeloTabla.addRow(new Object[]{
                 e.getIdEquipo(),
                 e.getNombre(),
                 e.getAnio_fundacion(),
                 e.getIdEstadio()
-            };
-            modeloTabla.addRow(fila);
+            });
         }
     }
 
-    private void cargarDatosFalsosJugadores() {
-        // Limpiamos el modelo por si acaso
-        modeloJugadores.setRowCount(0);
+    private void cargarDatosRealesJugadores() {
+        modeloJugadores.setRowCount(0); // Limpiar tabla gráfica
+        JugadorDAO dao = new JugadorDAO();
+        List<Jugador> lista = dao.obtenerTodos();
 
-        // Añadimos filas con los 6 datos (incluyendo la nacionalidad)
-        // ID, Nombre, Posición, Dorsal, Nacionalidad, ID Equipo
-        modeloJugadores.addRow(new Object[]{1, "Jordi Masip", "Portero", 1, "España", 1});
-        modeloJugadores.addRow(new Object[]{2, "Vinícius Júnior", "Delantero", 7, "Brasil", 2});
-        modeloJugadores.addRow(new Object[]{3, "Lamine Yamal", "Delantero", 19, "España", 3});
-        modeloJugadores.addRow(new Object[]{4, "Kylian Mbappé", "Delantero", 9, "Francia", 2});
+        for (Jugador j : lista) {
+            // Recuerda que modificamos la tabla para que tenga 6 columnas (con Nacionalidad)
+            modeloJugadores.addRow(new Object[]{
+                j.getIdJugador(),
+                j.getNombre(),
+                j.getPosicion(),
+                j.getDorsal(),
+                j.getNacionalidad(),
+                j.getIdEquipo()
+            });
+        }
     }
 
-    private void cargarDatosFalsosEstadisticas() {
-        // Mocking de estadísticas
-        modeloEstadisticas.addRow(new Object[]{1, 1, 0, 0, 1, 0}); // Masip (1 amarilla)
-        modeloEstadisticas.addRow(new Object[]{2, 2, 15, 8, 3, 0}); // Vinícius (15 goles)
-        modeloEstadisticas.addRow(new Object[]{3, 3, 5, 10, 0, 0}); // Lamine (10 asistencias)
+    private void cargarDatosRealesEstadisticas() {
+        modeloEstadisticas.setRowCount(0); // Limpiar tabla gráfica
+        // Para la pestaña de estadísticas gráficas, podemos usar el jugadorDAO para listar los nombres
+        // o hacer que lea directamente de la BD. Aquí tienes una carga limpia:
+        JugadorDAO jDao = new JugadorDAO();
+        EstadisticaDAO eDao = new EstadisticaDAO();
+        List<Jugador> jugadores = jDao.obtenerTodos();
+
+        for (Jugador j : jugadores) {
+            Estadistica est = eDao.obtenerPorJugador(j.getIdJugador());
+            if (est != null) {
+                modeloEstadisticas.addRow(new Object[]{
+                    j.getNombre(),
+                    est.getGoles(),
+                    est.getAsistencias(),
+                    est.getTarjetasAmarillas(),
+                    est.getTarjetasRojas(),
+                    est.getPartidosTitular(),
+                    est.getPartidosSuplente()
+                });
+            }
+        }
     }
 
     /**
