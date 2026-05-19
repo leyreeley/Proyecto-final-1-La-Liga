@@ -32,7 +32,7 @@ public class EstadisticaDAO {
             
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            System.out.println("Error al insertar estadísticas: " + ex.getMessage());
+            System.out.println("Error al insertar estadisticas: " + ex.getMessage());
             return false;
         }
     }
@@ -59,7 +59,7 @@ public class EstadisticaDAO {
                 }
             }
         } catch (SQLException e) {
-            System.out.println("Error al obtener estadísticas: " + e.getMessage());
+            System.out.println("Error al obtener estadisticas: " + e.getMessage());
         }
         return null; // Si no tiene estadísticas registradas
     }

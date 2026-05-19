@@ -5,18 +5,24 @@
 package com.laliga.vista;
 
 import com.laliga.controlador.LigaControlador;
-import com.laliga.modelo.Jugador;
+import com.laliga.dao.EquipoDAO;
 import com.laliga.dao.JugadorDAO;
+import com.laliga.modelo.Equipo;
+import com.laliga.modelo.Jugador;
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 /**
  *
  * @author leire.domsan
  */
 public class FormularioJugador extends javax.swing.JDialog {
 
-    private JTextField txtNombre, txtPosicion, txtDorsal, txtNacionalidad;
-    private JComboBox<Integer> comboEquipo; // Desplegable para el ID del equipo
+    private JTextField txtNombre;
+    private JTextField txtPosicion;
+    private JTextField txtDorsal;
+    private JTextField txtNacionalidad;
+    private JComboBox<Integer> comboEquipo; 
     private JButton btnGuardar;
     /**
      * Creates new form FormularioJugador
@@ -46,12 +52,20 @@ public class FormularioJugador extends javax.swing.JDialog {
         add(txtNacionalidad);
 
         add(new JLabel("  ID Equipo:"));
-        Integer[] equiposSimulados = {1, 2, 3}; // Luego esto vendrá de la BD
-        comboEquipo = new JComboBox<>(equiposSimulados);
+        
+        comboEquipo = new JComboBox<>();
+        
+        // === CARGA DINÁMICA DESDE LA BASE DE DATOS ===
+        EquipoDAO equipoDAO = new EquipoDAO();
+        List<Equipo> listaEquipos = equipoDAO.obtenerTodos(); 
+        for (Equipo eq : listaEquipos) {
+            comboEquipo.addItem(eq.getIdEquipo()); 
+        }
+        // ============================================
         add(comboEquipo);
 
         btnGuardar = new JButton("Confirmar Fichaje");
-        add(new JLabel("")); // Espacio vacío
+        add(new JLabel("")); 
         add(btnGuardar);
 
         btnGuardar.addActionListener(e -> guardar());
@@ -59,34 +73,36 @@ public class FormularioJugador extends javax.swing.JDialog {
 
     private void guardar() {
         try {
+            // 1. Extraemos los datos una sola vez de forma limpia
             String nombre = txtNombre.getText();
             String posicion = txtPosicion.getText();
             int dorsal = Integer.parseInt(txtDorsal.getText());
             String nacionalidad = txtNacionalidad.getText();
             int idEquipo = (Integer) comboEquipo.getSelectedItem();
 
-            //USAMOS EL CONTROLADOR
+            // 2. Pasamos el filtro de tu controlador
             if (!LigaControlador.validarJugador(nombre, posicion, dorsal, nacionalidad)) {
-                return; // Si no es válido, paramos aquí y no llamamos al DAO
+                return; // Si no es válido, frena aquí
             }
-            // 1. Recogemos los datos
-            Jugador j = new Jugador();
-            j.setNombre(txtNombre.getText());
-            j.setPosicion(txtPosicion.getText());
-            j.setDorsal(Integer.parseInt(txtDorsal.getText()));
-            j.setNacionalidad(txtNacionalidad.getText());
-            j.setIdEquipo((Integer) comboEquipo.getSelectedItem());
 
-            // 2. Llamamos al DAO
+            // 3. Empaquetamos en el objeto Jugador
+            Jugador j = new Jugador();
+            j.setNombre(nombre);
+            j.setPosicion(posicion);
+            j.setDorsal(dorsal);
+            j.setNacionalidad(nacionalidad);
+            j.setIdEquipo(idEquipo);
+
+            // 4. Llamamos a tu JugadorDAO para la persistencia en MySQL
             JugadorDAO dao = new JugadorDAO();
-            if (dao.insertar(j)) {
-                JOptionPane.showMessageDialog(this, "Jugador fichado con exito");
-                dispose();
+            if (dao.insertar(j)) { //
+                JOptionPane.showMessageDialog(this, "¡Jugador fichado con éxito!");
+                dispose(); // Cierra el formulario modal
             } else {
                 JOptionPane.showMessageDialog(this, "Error al guardar en BD.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "El dorsal debe ser un número.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "El dorsal debe ser un número entero válido.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     /**

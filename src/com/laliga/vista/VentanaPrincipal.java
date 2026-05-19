@@ -12,8 +12,6 @@ import com.laliga.modelo.Estadistica;
 import com.laliga.modelo.Jugador;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -41,7 +39,7 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         jPanel1.setLayout(new java.awt.BorderLayout());
         // 1. Configuración básica de la ventana
         setTitle("Gestor de La Liga - 1º DAM");
-        setSize(600, 400);
+        setSize(700, 450);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null); // Centrar en la pantalla
 
@@ -78,14 +76,34 @@ public class VentanaPrincipal extends javax.swing.JFrame {
 
         // Evento para el botón Borrar
         btnBorrar.addActionListener(e -> {
-            // Obtenemos qué fila ha seleccionado el usuario con el ratón
+
             int filaSeleccionada = tablaEquipos.getSelectedRow();
 
             if (filaSeleccionada != -1) {
-                // Si hay una fila seleccionada, la borramos visualmente del modelo
-                modeloTabla.removeRow(filaSeleccionada);
+                // 1. Conseguimos el ID real del equipo (columna 0)
+                int idEquipo = Integer.parseInt(modeloTabla.getValueAt(filaSeleccionada, 0).toString());
+                String nombreEquipo = modeloTabla.getValueAt(filaSeleccionada, 1).toString();
+
+                // Preguntar antes de romper nada
+                int respuesta = JOptionPane.showConfirmDialog(this,
+                        "¿Seguro que deseas eliminar al equipo '" + nombreEquipo + "' de la Base de Datos?",
+                        "Confirmar Borrado Real", JOptionPane.YES_NO_OPTION);
+
+                if (respuesta == JOptionPane.YES_OPTION) {
+                    EquipoDAO dao = new EquipoDAO();
+
+                    // 2. Llamamos a tu método eliminar del DAO
+                    if (dao.eliminar(idEquipo)) {
+                        JOptionPane.showMessageDialog(this, "Equipo eliminado correctamente.");
+                        // 3. Volvemos a pintar la tabla leyendo de la BD ya limpia
+                        cargarDatosRealesEquipos();
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                "No se pudo eliminar.\nRecuerda que si el equipo tiene jugadores asociados en la base de datos, no se permite.",
+                                "Error de Clave Foranea", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
             } else {
-                // Si no ha seleccionado nada, mostramos una advertencia
                 JOptionPane.showMessageDialog(this, "Por favor, selecciona un equipo de la tabla primero.", "Atención", JOptionPane.WARNING_MESSAGE);
             }
         });
@@ -120,16 +138,37 @@ public class VentanaPrincipal extends javax.swing.JFrame {
             // Abrimos el formulario que acabamos de crear
             FormularioJugador form = new FormularioJugador(this);
             form.setVisible(true);
-            cargarDatosRealesEquipos();
+            cargarDatosRealesJugadores();
         });
 
         // Evento para borrar
         btnBorrarJugador.addActionListener(e -> {
             int fila = tablaJugadores.getSelectedRow();
+
             if (fila != -1) {
-                modeloJugadores.removeRow(fila);
+                // 1. Conseguimos el ID real del jugador (columna 0)
+                int idJugador = Integer.parseInt(modeloJugadores.getValueAt(fila, 0).toString());
+                String nombreJugador = modeloJugadores.getValueAt(fila, 1).toString();
+
+                int respuesta = JOptionPane.showConfirmDialog(this,
+                        "¿Seguro que deseas rescindir el contrato de " + nombreJugador + "?\nSe borraran tambien sus estadisticas.",
+                        "Confirmar Despido Real", JOptionPane.YES_NO_OPTION);
+
+                if (respuesta == JOptionPane.YES_OPTION) {
+                    JugadorDAO dao = new JugadorDAO();
+
+                    // 2. Llamamos a tu método eliminar con transacción
+                    if (dao.eliminar(idJugador)) {
+                        JOptionPane.showMessageDialog(this, "Jugador y estadisticas eliminados correctamente.");
+                        // 3. Limpiamos y refrescamos las dos pestañas afectadas automáticamente
+                        cargarDatosRealesJugadores();
+                        cargarDatosRealesEstadisticas();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Error al intentar eliminar el jugador.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
             } else {
-                JOptionPane.showMessageDialog(this, "Selecciona un jugador primero.", "Atención", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Selecciona un jugador primero.", "Atencion", JOptionPane.WARNING_MESSAGE);
             }
         });
 
@@ -139,7 +178,7 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         jPanel3.setLayout(new java.awt.BorderLayout());
 
         // 1. Columnas basadas en tu clase Estadistica.java
-        String[] colEstadisticas = {"ID", "ID Jugador", "Goles", "Asistencias", "T. Amarillas", "T. Rojas"};
+        String[] colEstadisticas = {"Jugador", "Goles", "Asistencias", "T. Amarillas", "T. Rojas", "P. Titular", "P. Suplente"};
         modeloEstadisticas = new DefaultTableModel(colEstadisticas, 0);
         tablaEstadisticas = new JTable(modeloEstadisticas);
 
@@ -159,13 +198,98 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         // 4. Cargar datos de prueba
         cargarDatosRealesEstadisticas();
 
-        // 5. Eventos (preparados para la lógica posterior)
+        // EVENTO: Actualizar Datos de la Fila Seleccionada
         btnActualizar.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Funcionalidad para modificar goles/tarjetas.");
+            int filaSeleccionada = tablaEstadisticas.getSelectedRow();
+
+            if (filaSeleccionada != -1) {
+                try {
+                    // 1. Obtener los datos actuales de la fila seleccionada en la tabla gráfica
+                    String nombreJugador = modeloEstadisticas.getValueAt(filaSeleccionada, 0).toString();
+                    int goles = Integer.parseInt(modeloEstadisticas.getValueAt(filaSeleccionada, 1).toString());
+                    int asistencias = Integer.parseInt(modeloEstadisticas.getValueAt(filaSeleccionada, 2).toString());
+                    int amarillas = Integer.parseInt(modeloEstadisticas.getValueAt(filaSeleccionada, 3).toString());
+                    int rojas = Integer.parseInt(modeloEstadisticas.getValueAt(filaSeleccionada, 4).toString());
+                    int titular = Integer.parseInt(modeloEstadisticas.getValueAt(filaSeleccionada, 5).toString());
+                    int suplente = Integer.parseInt(modeloEstadisticas.getValueAt(filaSeleccionada, 6).toString());
+
+                    // 2. Buscar el ID del jugador a través de su nombre
+                    JugadorDAO jDao = new JugadorDAO();
+                    List<Jugador> todosLosJugadores = jDao.obtenerTodos();
+                    int idJugador = -1;
+                    for (Jugador j : todosLosJugadores) {
+                        if (j.getNombre().equals(nombreJugador)) {
+                            idJugador = j.getIdJugador();
+                            break;
+                        }
+                    }
+
+                    if (idJugador != -1) {
+                        // 3. Crear el objeto estadística con los nuevos datos modificados de la tabla
+                        com.laliga.modelo.Estadistica est = new com.laliga.modelo.Estadistica();
+                        est.setIdJugador(idJugador);
+                        est.setGoles(goles);
+                        est.setAsistencias(asistencias);
+                        est.setTarjetasAmarillas(amarillas);
+                        est.setTarjetasRojas(rojas);
+                        est.setPartidosTitular(titular);
+                        est.setPartidosSuplente(suplente);
+                        est.setPartidosSinJugar(0); // Valor por defecto
+
+                        // 4. Guardar los cambios usando una actualización en la BD
+                        EstadisticaDAO eDao = new EstadisticaDAO();
+
+                        // Añadimos una consulta directa de actualización segura
+                        String sqlUpdate = "UPDATE estadisticas SET goles=?, asistencias=?, tarjetas_amarillas=?, tarjetas_rojas=?, partidos_titular=?, partidos_suplente=? WHERE id_jugador=?";
+                        try (java.sql.Connection con = com.laliga.util.ConexionBD.conectar(); java.sql.PreparedStatement ps = con.prepareStatement(sqlUpdate)) {
+                            ps.setInt(1, est.getGoles());
+                            ps.setInt(2, est.getAsistencias());
+                            ps.setInt(3, est.getTarjetasAmarillas());
+                            ps.setInt(4, est.getTarjetasRojas());
+                            ps.setInt(5, est.getPartidosTitular());
+                            ps.setInt(6, est.getPartidosSuplente());
+                            ps.setInt(7, est.getIdJugador());
+
+                            int filas = ps.executeUpdate();
+                            if (filas > 0) {
+                                JOptionPane.showMessageDialog(this, "¡Estadísticas de " + nombreJugador + " actualizadas en la Base de Datos!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                            }
+                        }
+
+                        // 5. Refrescar la tabla para asegurar la sincronización gráfica
+                        cargarDatosRealesEstadisticas();
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Error al actualizar: Asegúrate de introducir solo números enteros en los campos de estadísticas.\n" + ex.getMessage(), "Error de formato", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Por favor, selecciona primero la fila del jugador que deseas modificar en la tabla.", "Atención", JOptionPane.WARNING_MESSAGE);
+            }
         });
 
+        // EVENTO: Mostrar Ranking Pichichi (Top Goleadores de la BD)
         btnTopGoleadores.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Aquí se mostraría el ranking de máximos goleadores (Pichichi).");
+            StringBuilder ranking = new StringBuilder("🏆 --- TOP 5 MÁXIMOS GOLEADORES ---\n\n");
+            String sqlTop = "SELECT j.nombre, e.goles FROM jugadores j "
+                    + "JOIN estadisticas e ON j.id_jugador = e.id_jugador "
+                    + "ORDER BY e.goles DESC LIMIT 5";
+
+            try (java.sql.Connection con = com.laliga.util.ConexionBD.conectar(); java.sql.PreparedStatement ps = con.prepareStatement(sqlTop); java.sql.ResultSet rs = ps.executeQuery()) {
+
+                int puesto = 1;
+                while (rs.next()) {
+                    ranking.append(puesto).append(". ")
+                            .append(rs.getString("nombre")).append(" - ")
+                            .append(rs.getInt("goles")).append(" goles\n");
+                    puesto++;
+                }
+
+                // Desplegar el Top 5 en una ventana emergente muy visual
+                JOptionPane.showMessageDialog(this, ranking.toString(), "Trofeo Pichichi", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (java.sql.SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Error al consultar el ranking: " + ex.getMessage(), "Error SQL", JOptionPane.ERROR_MESSAGE);
+            }
         });
     }
 
@@ -290,6 +414,11 @@ public class VentanaPrincipal extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
+        // Cambiamos los textos por defecto de los botones de JOptionPane
+        UIManager.put("OptionPane.yesButtonText", "Sí");
+        UIManager.put("OptionPane.noButtonText", "No");
+        UIManager.put("OptionPane.cancelButtonText", "Cancelar");
+        
         SwingUtilities.invokeLater(() -> {
             VentanaPrincipal ventana = new VentanaPrincipal();
             ventana.setVisible(true);
