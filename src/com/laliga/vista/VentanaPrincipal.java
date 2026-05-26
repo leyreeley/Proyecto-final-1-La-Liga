@@ -472,7 +472,6 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         // ?1. Activamos el tema FlatLaf antes de arrancar nada
         try {
             // 1. Aplicamos el tema espectacular (Estilo Mac Oscuro)
-            // Si prefieres color claro, cambia Dark por Light: com.formdev.flatlaf.themes.FlatMacLightLaf.setup();
             com.formdev.flatlaf.themes.FlatMacDarkLaf.setup();
 
             // 2. Ajustes extra para hacerlo súper moderno (Bordes redondeados)
