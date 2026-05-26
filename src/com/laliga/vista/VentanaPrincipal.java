@@ -126,9 +126,11 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         JPanel panelBotonesJug = new JPanel();
         JButton btnAnadirJugador = new JButton("Fichar Jugador");
         JButton btnBorrarJugador = new JButton("Despedir Jugador");
+        JButton btnActualizarJugador = new JButton("Guardar Cambios"); // NUEVO BOTÓN
 
         panelBotonesJug.add(btnAnadirJugador);
         panelBotonesJug.add(btnBorrarJugador);
+        panelBotonesJug.add(btnActualizarJugador); // LO AÑADO AL PANEL
         jPanel2.add(panelBotonesJug, java.awt.BorderLayout.SOUTH);
 
         cargarDatosRealesJugadores();
@@ -172,6 +174,54 @@ public class VentanaPrincipal extends javax.swing.JFrame {
             }
         });
 
+        // EVENTO DEFINITIVO: Actualizar TODOS los campos del jugador seleccionado
+        btnActualizarJugador.addActionListener(e -> {
+
+            //Si la celda sigue en modo edición, forzamos a que fije el texto
+            if (tablaJugadores.isEditing()) {
+                tablaJugadores.getCellEditor().stopCellEditing();
+            }
+
+            int fila = tablaJugadores.getSelectedRow();
+
+            if (fila != -1) {
+                try {
+                    // 1. Sacamos TODOS los datos de la fila de la tabla gráfica
+                    int idJugador = Integer.parseInt(modeloJugadores.getValueAt(fila, 0).toString());
+                    String nuevoNombre = modeloJugadores.getValueAt(fila, 1).toString();
+                    String nuevaPosicion = modeloJugadores.getValueAt(fila, 2).toString();
+                    int nuevoDorsal = Integer.parseInt(modeloJugadores.getValueAt(fila, 3).toString());
+                    String nuevaNacionalidad = modeloJugadores.getValueAt(fila, 4).toString();
+                    int nuevoIdEquipo = Integer.parseInt(modeloJugadores.getValueAt(fila, 5).toString());
+
+                    // 2. Ejecutamos el UPDATE en la BD actualizando todos los campos a la vez
+                    String sqlUpdate = "UPDATE jugadores SET nombre = ?, posicion = ?, dorsal = ?, nacionalidad = ?, id_equipo = ? WHERE id_jugador = ?";
+
+                    try (java.sql.Connection con = com.laliga.util.ConexionBD.conectar(); java.sql.PreparedStatement ps = con.prepareStatement(sqlUpdate)) {
+
+                        ps.setString(1, nuevoNombre);
+                        ps.setString(2, nuevaPosicion);
+                        ps.setInt(3, nuevoDorsal);
+                        ps.setString(4, nuevaNacionalidad);
+                        ps.setInt(5, nuevoIdEquipo);
+                        ps.setInt(6, idJugador); // El WHERE usa el ID
+
+                        if (ps.executeUpdate() > 0) {
+                            JOptionPane.showMessageDialog(this, "¡Datos del jugador actualizados con exito!", "Actualizado", JOptionPane.INFORMATION_MESSAGE);
+                            // 3. Refrescamos la tabla
+                            cargarDatosRealesJugadores();
+                        }
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Error de formato: Asegúrate de que el Dorsal y el ID Equipo sean numeros enteros validos.", "Error", JOptionPane.ERROR_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Error al actualizar en la BD: " + ex.getMessage(), "Error SQL", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Por favor, selecciona un jugador de la tabla primero.", "Atencion", JOptionPane.WARNING_MESSAGE);
+            }
+        });
+
         // ==========================================
         // PESTAÑA 3: ESTADÍSTICAS
         // ==========================================
@@ -200,6 +250,11 @@ public class VentanaPrincipal extends javax.swing.JFrame {
 
         // EVENTO: Actualizar Datos de la Fila Seleccionada
         btnActualizar.addActionListener(e -> {
+            // Si el usuario está escribiendo y no pulsó Enter, forzamos a guardar el texto
+            if (tablaEstadisticas.isEditing()) {
+                tablaEstadisticas.getCellEditor().stopCellEditing();
+            }
+
             int filaSeleccionada = tablaEstadisticas.getSelectedRow();
 
             if (filaSeleccionada != -1) {
@@ -414,11 +469,27 @@ public class VentanaPrincipal extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        // Cambiamos los textos por defecto de los botones de JOptionPane
+        // ?1. Activamos el tema FlatLaf antes de arrancar nada
+        try {
+            // 1. Aplicamos el tema espectacular (Estilo Mac Oscuro)
+            // Si prefieres color claro, cambia Dark por Light: com.formdev.flatlaf.themes.FlatMacLightLaf.setup();
+            com.formdev.flatlaf.themes.FlatMacDarkLaf.setup();
+
+            // 2. Ajustes extra para hacerlo súper moderno (Bordes redondeados)
+            UIManager.put("Button.arc", 999); // Botones con forma de píldora
+            UIManager.put("Component.arc", 15); // Bordes redondeados en paneles y tablas
+            UIManager.put("TextComponent.arc", 15); // Bordes redondeados en campos de texto
+            
+        } catch( Exception ex ) {
+            System.err.println( "Error al inicializar el tema FlatLaf" );
+        }
+
+        // 2. Textos en español para los paneles de confirmación
         UIManager.put("OptionPane.yesButtonText", "Sí");
         UIManager.put("OptionPane.noButtonText", "No");
         UIManager.put("OptionPane.cancelButtonText", "Cancelar");
-        
+
+        // 3. Arrancamos tu ventana
         SwingUtilities.invokeLater(() -> {
             VentanaPrincipal ventana = new VentanaPrincipal();
             ventana.setVisible(true);
